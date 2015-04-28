@@ -30,6 +30,7 @@ public class PrimitiveLayout extends ViewGroup{
         params = generateDefaultLayoutParams();
         view.setLayoutParams(params);
       }
+        //huy
 
       int widthSpec = MeasureSpec.makeMeasureSpec(params.width, MeasureSpec.EXACTLY);
       int heightSpec = MeasureSpec.makeMeasureSpec(params.height, MeasureSpec.EXACTLY);

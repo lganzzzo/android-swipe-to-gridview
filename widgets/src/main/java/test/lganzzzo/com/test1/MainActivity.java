@@ -26,7 +26,7 @@ public class MainActivity extends ActionBarActivity {
 
     swipeToGridViewLayout = (SwipeToGridViewLayout)findViewById(R.id.card_view);
     swipeToGridViewLayout.setAdapter(new CardsAdapter(this));
-    //cardViewLayout.precacheViews(10);
+    swipeToGridViewLayout.precacheViews(50);
 
   }
 

@@ -33,22 +33,22 @@ public class SwipeToGridViewLayout extends ViewGroup{
   private int nextMode = MODE_GRID;
   private int scrollingMode = -1;
 
-  private float modeTransitionTime = 0f;
+  private float modeTransitionProgress = 0f;
   private float modeTransitionSpeed = 2f;
 
-  private int SWIPE_CARD_MARGIN_VERTICAL = 50;
-  private int SWIPE_CARD_MARGIN_HORIZONTAL = 50;
+  private int SWIPE_VIEW_PADDING_VERTICAL = 50;
+  private int SWIPE_VIEW_PADDING_HORIZONTAL = 50;
 
-  private int GRID_CARD_MARGIN_VERTICAL = 50;
-  private int GRID_CARD_MARGIN_HORIZONTAL = 100;
+  private int GRID_VIEW_PADDING_VERTICAL = 50;
+  private int GRID_VIEW_PADDING_HORIZONTAL = 100;
 
-  private int SWIPE_DIV_WIDTH = 20;
-  private int GRID_DIV_HORIZONTAL_WIDTH = 50;
-  private int GRID_DIV_VERTICAL_WIDTH = 50;
+  private int SWIPE_VIEW_DIV_WIDTH = 20;
+  private int GRID_VIEW_DIV_HORIZONTAL_WIDTH = 50;
+  private int GRID_VIEW_DIV_VERTICAL_WIDTH = 50;
 
-  private float cardAspectRatio = 4f / 3f;
+  private float CARD_ASPECT_RATIO = 4f / 3f;
 
-  private int GRID_COLS = 4;
+  private int GRID_VIEW_COLUMNS = 4;
 
   private boolean hasScroll = false;
 
@@ -58,8 +58,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
   private float aspectRatio = 1;
 
-  private float fullCardWidth = 0;
-  private float fullCardHeight = 0;
+  private float swipeCardWidth = 0;
+  private float swipeCardHeight = 0;
 
   private float gridCardWidth;
   private float gridCardHeight;
@@ -86,7 +86,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
   private float touchInterceptPointY;
 
   private float touchSwipeScrollX;
-  private float touchGrisScrollY;
+  private float touchGridScrollY;
 
   private int selectedCardIndex = -1;
 
@@ -95,6 +95,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
    */
   private int lastTouchPointerCount = 0;
   private float initialTouchDistance;
+  private float initialModeTransitionProgress;
 
   private boolean isTouched = false;
   private boolean wasFling = false;
@@ -166,18 +167,18 @@ public class SwipeToGridViewLayout extends ViewGroup{
     TypedArray a = getContext().getTheme().obtainStyledAttributes(attrs, R.styleable.SwipeToGridViewLayout, 0, 0);
 
     try {
-      cardAspectRatio = a.getFloat(R.styleable.SwipeToGridViewLayout_card_aspect_ratio, 1.33333f);
-      GRID_COLS = a.getInteger(R.styleable.SwipeToGridViewLayout_grid_view_columns, 3);
+      CARD_ASPECT_RATIO = a.getFloat(R.styleable.SwipeToGridViewLayout_card_aspect_ratio, 1.33333f);
+      GRID_VIEW_COLUMNS = a.getInteger(R.styleable.SwipeToGridViewLayout_grid_view_columns, 3);
 
-      SWIPE_CARD_MARGIN_HORIZONTAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_swipe_view_padding_horizontal, 100);
-      SWIPE_CARD_MARGIN_VERTICAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_swipe_view_padding_vertical, 50);
+      SWIPE_VIEW_PADDING_HORIZONTAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_swipe_view_padding_horizontal, 100);
+      SWIPE_VIEW_PADDING_VERTICAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_swipe_view_padding_vertical, 50);
 
-      GRID_CARD_MARGIN_HORIZONTAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_padding_horizontal, 50);
-      GRID_CARD_MARGIN_VERTICAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_padding_vertical, 50);
+      GRID_VIEW_PADDING_HORIZONTAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_padding_horizontal, 50);
+      GRID_VIEW_PADDING_VERTICAL = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_padding_vertical, 50);
 
-      SWIPE_DIV_WIDTH = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_swipe_view_div_width, 50);
-      GRID_DIV_HORIZONTAL_WIDTH = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_div_horizontal_width, 50);
-      GRID_DIV_VERTICAL_WIDTH = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_div_vertical_width, 50);
+      SWIPE_VIEW_DIV_WIDTH = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_swipe_view_div_width, 50);
+      GRID_VIEW_DIV_HORIZONTAL_WIDTH = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_div_horizontal_width, 50);
+      GRID_VIEW_DIV_VERTICAL_WIDTH = a.getDimensionPixelOffset(R.styleable.SwipeToGridViewLayout_grid_view_div_vertical_width, 50);
 
 
     } finally {
@@ -195,7 +196,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
   }
 
   private int getXPositionForSwipePage(int pageIndex){
-    int shift = (int) ((getWidth() / 2) - fullCardWidth / 2);
+    int shift = (int) ((getWidth() / 2) - swipeCardWidth / 2);
     return (int) (- pageIndex * swipeFrameWidth + shift);
   }
 
@@ -205,8 +206,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
     swipeMaxScrollX = getXPositionForSwipePage(itemsCount - 1);
 
 
-    int rows = itemsCount / GRID_COLS;
-    if(rows * GRID_COLS < itemsCount){
+    int rows = itemsCount / GRID_VIEW_COLUMNS;
+    if(rows * GRID_VIEW_COLUMNS < itemsCount){
       rows++;
     }
 
@@ -216,7 +217,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
       gridMinScrollY = (height - gridHeight) / 2;
       gridMaxScrollY = gridMinScrollY;
     } else {
-      gridMinScrollY = GRID_CARD_MARGIN_VERTICAL;
+      gridMinScrollY = GRID_VIEW_PADDING_VERTICAL;
       gridMaxScrollY = -(gridHeight - height);
     }
 
@@ -230,36 +231,36 @@ public class SwipeToGridViewLayout extends ViewGroup{
     int fullWidth = MeasureSpec.getSize(widthMeasureSpec);
     int fullHeight = MeasureSpec.getSize(heightMeasureSpec);
 
-    float width = fullWidth - SWIPE_CARD_MARGIN_HORIZONTAL * 2;
-    float height = fullHeight - SWIPE_CARD_MARGIN_VERTICAL * 2;
+    float width = fullWidth - SWIPE_VIEW_PADDING_HORIZONTAL * 2;
+    float height = fullHeight - SWIPE_VIEW_PADDING_VERTICAL * 2;
 
     if(width > 0 && height > 0){
 
       aspectRatio = height / width;
 
-      if(cardAspectRatio > aspectRatio){
-        fullCardHeight = height;
-        fullCardWidth = height / cardAspectRatio;
+      if(CARD_ASPECT_RATIO > aspectRatio){
+        swipeCardHeight = height;
+        swipeCardWidth = height / CARD_ASPECT_RATIO;
       }else{
-        fullCardWidth = width;
-        fullCardHeight = width * cardAspectRatio;
+        swipeCardWidth = width;
+        swipeCardHeight = width * CARD_ASPECT_RATIO;
       }
 
-      swipeFrameWidth = fullCardWidth + SWIPE_DIV_WIDTH;
-      gridFrameWidth = (fullWidth - GRID_CARD_MARGIN_HORIZONTAL * 2f) / GRID_COLS;
+      swipeFrameWidth = swipeCardWidth + SWIPE_VIEW_DIV_WIDTH;
+      gridFrameWidth = (fullWidth - GRID_VIEW_PADDING_HORIZONTAL * 2f) / GRID_VIEW_COLUMNS;
 
-      gridCardWidth = gridFrameWidth - GRID_DIV_HORIZONTAL_WIDTH;
-      gridCardHeight = gridCardWidth * cardAspectRatio;
+      gridCardWidth = gridFrameWidth - GRID_VIEW_DIV_HORIZONTAL_WIDTH;
+      gridCardHeight = gridCardWidth * CARD_ASPECT_RATIO;
 
-      gridFrameHeight = gridCardHeight + GRID_DIV_VERTICAL_WIDTH;
+      gridFrameHeight = gridCardHeight + GRID_VIEW_DIV_VERTICAL_WIDTH;
 
-      swipeScrollY = (fullHeight - fullCardHeight) / 2f;
+      swipeScrollY = (fullHeight - swipeCardHeight) / 2f;
 
       float gridWidth;
-      if(adapter.getCount() < GRID_COLS){
-        gridWidth = itemsCount * gridFrameWidth - GRID_DIV_HORIZONTAL_WIDTH;
+      if(adapter.getCount() < GRID_VIEW_COLUMNS){
+        gridWidth = itemsCount * gridFrameWidth - GRID_VIEW_DIV_HORIZONTAL_WIDTH;
       }else{
-        gridWidth = fullWidth - GRID_CARD_MARGIN_HORIZONTAL * 2f - GRID_DIV_HORIZONTAL_WIDTH;
+        gridWidth = fullWidth - GRID_VIEW_PADDING_HORIZONTAL * 2f - GRID_VIEW_DIV_HORIZONTAL_WIDTH;
       }
       gridScrollX = (fullWidth - gridWidth) / 2f;
 
@@ -272,8 +273,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
       }
 
     }else{
-      fullCardWidth = 0;
-      fullCardHeight = 0;
+      swipeCardWidth = 0;
+      swipeCardHeight = 0;
     }
 
     setMeasuredDimension(fullWidth, fullHeight);
@@ -363,14 +364,18 @@ public class SwipeToGridViewLayout extends ViewGroup{
       return false;
     }
 
-    if(modeTransitionTime > 0){
+    if(modeTransitionProgress > 0){
 
       if(getWidth() > 0) {
-        modeTransitionTime = modeTransitionTime + deltaTime * modeTransitionSpeed;
+        if(modeTransitionProgress > initialModeTransitionProgress) {
+          modeTransitionProgress = modeTransitionProgress + deltaTime * modeTransitionSpeed;
+        }else{
+          modeTransitionProgress = modeTransitionProgress - deltaTime * modeTransitionSpeed;
+        }
       }
 
-      if(modeTransitionTime >= 1){
-        modeTransitionTime = 0f;
+      if(modeTransitionProgress >= 1){
+        modeTransitionProgress = 0f;
         if(currMode == MODE_SWIPE){
           currMode = MODE_GRID;
         }else{
@@ -418,7 +423,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
   private int getCardFrameIndexAtXY(float x, float y){
 
-    if(modeTransitionTime != 0){
+    if(modeTransitionProgress != 0){
       return -1;
     }
 
@@ -431,8 +436,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
       float cx = x - gridScrollX;
 
-      if(cx >= gridFrameWidth * GRID_COLS){
-        cx = gridFrameWidth * (GRID_COLS - 1);
+      if(cx >= gridFrameWidth * GRID_VIEW_COLUMNS){
+        cx = gridFrameWidth * (GRID_VIEW_COLUMNS - 1);
       }
 
       if(cx < 0){
@@ -440,7 +445,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
       }
 
       int col = (int) (cx / gridFrameWidth);
-      result = col + row * GRID_COLS;
+      result = col + row * GRID_VIEW_COLUMNS;
     }
 
     if(result >= adapter.getCount()){
@@ -459,7 +464,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
       if(currMode == MODE_SWIPE){
 
-        int row = cardIndex / GRID_COLS;
+        int row = cardIndex / GRID_VIEW_COLUMNS;
         setGridScrollY(- (row * gridFrameHeight) + getHeight() / 2f - gridCardHeight / 2f);
 
       }else if(currMode == MODE_GRID){
@@ -489,7 +494,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
     touchPointX = x;
     touchPointY = y;
     touchSwipeScrollX = swipeScrollX;
-    touchGrisScrollY = gridScrollY;
+    touchGridScrollY = gridScrollY;
   }
 
   private void onTouchBegin(float x, float y){
@@ -569,6 +574,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
   private void onZoomBegin(MotionEvent event, float x, float y){
     initialTouchDistance = calcTouchDistance(event);
+    initialModeTransitionProgress = modeTransitionProgress;
 
     touchPointX = x;
     touchPointY = y;
@@ -576,7 +582,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
     syncScroll(x, y);
 
     if(currMode == MODE_SWIPE) {
-      touchGrisScrollY = gridScrollY;
+      touchGridScrollY = gridScrollY;
     }else if(currMode == MODE_GRID){
       touchSwipeScrollX = swipeScrollX;
     }
@@ -597,13 +603,19 @@ public class SwipeToGridViewLayout extends ViewGroup{
       zoomRation = calcTouchDistance(event) / initialTouchDistance;
     }
 
-    if(zoomRation > 2){
+    /*if(zoomRation > 2){
       zoomRation = 2;
     }else if(zoomRation < 1){
       zoomRation = 1;
-    }
+    }*/
 
-    modeTransitionTime = zoomRation - 1;
+    modeTransitionProgress = initialModeTransitionProgress + zoomRation - 1;
+
+    if(modeTransitionProgress > 1){
+      modeTransitionProgress = 1;
+    }else if(modeTransitionProgress < 0){
+      modeTransitionProgress = 0;
+    }
 
   }
 
@@ -627,7 +639,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
   }
 
   private int getCurrentSwipePage(){
-    float shift = getWidth() / 2 - fullCardWidth / 2;
+    float shift = getWidth() / 2 - swipeCardWidth / 2;
     return Math.round((- swipeScrollX + shift) / swipeFrameWidth);
   }
 
@@ -638,7 +650,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
   private void onFling(float vx, float vy){
 
-    if(modeTransitionTime > 0){
+    if(modeTransitionProgress > 0){
       return;
     }
 
@@ -653,7 +665,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
       int index = getCurrentSwipePage();
       float needScrollX = getXPositionForSwipePage(index);
 
-      float neededVx = fullCardWidth / 5;
+      float neededVx = swipeCardWidth / 5;
       if(vx > neededVx && needScrollX < swipeScrollX){
         scrollToPage(index - 1);
       } else if(vx < -neededVx && needScrollX > swipeScrollX){
@@ -760,19 +772,19 @@ public class SwipeToGridViewLayout extends ViewGroup{
   private void processOnePointMove(float x, float y){
 
     if(currMode == MODE_SWIPE) {
-      if(modeTransitionTime == 0){
+      if(modeTransitionProgress == 0){
         processSwipeMove(x, y, 1);
       } else {
-        float f = modeTransitionFunction(modeTransitionTime);
+        float f = modeTransitionFunction(modeTransitionProgress);
         float fi = 1 - f;
         processSwipeMove(x, y, fi);
         processGridMove(x, y, f);
       }
     } else {
-      if(modeTransitionTime == 0){
+      if(modeTransitionProgress == 0){
         processGridMove(x, y, 1);
       } else {
-        float fi = modeTransitionFunction(modeTransitionTime);
+        float fi = modeTransitionFunction(modeTransitionProgress);
         float f = 1 - fi;
         processSwipeMove(x, y, fi);
         processGridMove(x, y, f);
@@ -786,7 +798,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
   }
 
   private void processGridMove(float x, float y, float k){
-    setGridScrollY(touchGrisScrollY + k * (y - touchPointY));
+    setGridScrollY(touchGridScrollY + k * (y - touchPointY));
   }
 
   private boolean processZoomingTouch(MotionEvent event){
@@ -839,7 +851,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
       if(isVisibleOnScreen()){
         requestView();
         viewRecord.scroll(- calculatedRect.left, - calculatedRect.top);
-        float scale = (calculatedRect.width()) / fullCardWidth;
+        float scale = (calculatedRect.width()) / swipeCardWidth;
         viewRecord.getView().setScaleY(scale);
         viewRecord.getView().setScaleX(scale);
         viewRecord.getView().setPivotX(0);
@@ -858,7 +870,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
       PointF swipePos = calcSwipePosition();
       PointF gridPos = calcGridPosition();
 
-      swipeRect = new RectF(swipePos.x, swipePos.y, swipePos.x + fullCardWidth, swipePos.y + fullCardHeight);
+      swipeRect = new RectF(swipePos.x, swipePos.y, swipePos.x + swipeCardWidth, swipePos.y + swipeCardHeight);
       gridRect = new RectF(gridPos.x, gridPos.y, gridPos.x + gridCardWidth, gridPos.y + gridCardHeight);
 
     }
@@ -872,7 +884,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     public RectF calcRect(){
 
-      if(modeTransitionTime == 0){
+      if(modeTransitionProgress == 0){
         if(currMode == MODE_SWIPE){
           calculatedRect = new RectF(swipeRect.left + swipeScrollX, swipeRect.top + swipeScrollY, swipeRect.right + swipeScrollX, swipeRect.bottom + swipeScrollY);
           return calculatedRect;
@@ -886,10 +898,10 @@ public class SwipeToGridViewLayout extends ViewGroup{
         float fi;
 
         if(currMode == MODE_SWIPE){
-          f = modeTransitionFunction(modeTransitionTime);
+          f = modeTransitionFunction(modeTransitionProgress);
           fi = 1 - f;
         }else{
-          fi = modeTransitionFunction(modeTransitionTime);
+          fi = modeTransitionFunction(modeTransitionProgress);
           f = 1 - fi;
         }
 
@@ -906,8 +918,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     private PointF calcGridPosition(){
 
-      int row = index / GRID_COLS;
-      int col = index - row * GRID_COLS;
+      int row = index / GRID_VIEW_COLUMNS;
+      int col = index - row * GRID_VIEW_COLUMNS;
 
       return new PointF(col * gridFrameWidth, row * gridFrameHeight);
 
@@ -1045,7 +1057,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
       this.index = index;
       this.view = view;
       subView = new PrimitiveLayout(getContext());
-      subView.addView(view, new LayoutParams((int)fullCardWidth, (int)fullCardHeight));
+      subView.addView(view, new LayoutParams((int) swipeCardWidth, (int) swipeCardHeight));
       addViewInLayout(subView, -1, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
       subView.requestLayout();
     }
@@ -1085,7 +1097,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
         for (ViewRecord rec : availableRecords) {
           if (rec.getIndex() == index) {
             availableRecords.remove(rec);
-            attachViewToParent(rec.subView, -1, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+            rec.subView.setVisibility(View.VISIBLE);
             return rec;
           }
         }
@@ -1093,7 +1105,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
         ViewRecord rec = availableRecords.removeFirst();
         rec.setIndex(index);
         updateRecordView(rec);
-        attachViewToParent(rec.subView, -1, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+        rec.subView.setVisibility(View.VISIBLE);
         return rec;
 
       }else{
@@ -1104,12 +1116,12 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     public void recycleView(ViewRecord record){
       availableRecords.add(record);
-      detachViewFromParent(record.subView);
+      record.subView.setVisibility(View.INVISIBLE);
     }
 
     private ViewRecord createNewRecord(int index){
       ViewRecord record = new ViewRecord(index, adapter.createView());
-      record.getView().setLayoutParams(new LayoutParams((int)fullCardWidth, (int)fullCardHeight));
+      record.getView().setLayoutParams(new LayoutParams((int) swipeCardWidth, (int) swipeCardHeight));
       records.add(record);
       updateRecordView(record);
       return record;
@@ -1121,18 +1133,18 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     public void fillPool(int number){
       for(int i = 0; i < number; i++) {
-        ViewRecord record = new ViewRecord(-100, adapter.createView());
-        record.getView().setLayoutParams(new LayoutParams((int) fullCardWidth, (int) fullCardHeight));
+        ViewRecord record = new ViewRecord(-1000, adapter.createView());
+        record.getView().setLayoutParams(new LayoutParams((int) swipeCardWidth, (int) swipeCardHeight));
         records.add(record);
         availableRecords.add(record);
-        detachViewFromParent(record.subView);
+        record.subView.setVisibility(View.INVISIBLE);
       }
     }
 
     public void measureCards(){
 
       for(ViewRecord rec : records){
-        rec.getView().setLayoutParams(new LayoutParams((int)fullCardWidth, (int)fullCardHeight));
+        rec.getView().setLayoutParams(new LayoutParams((int) swipeCardWidth, (int) swipeCardHeight));
       }
 
     }

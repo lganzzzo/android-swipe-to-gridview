@@ -8,22 +8,32 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.text.TextPaint;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.OverScroller;
 
-import com.lganzzzo.ui.widget.PrimitiveLayout;
-
 import java.util.LinkedList;
 
 import test.lganzzzo.com.test1.R;
 
-/**
- * Created by leonid on 3/31/15.
+/*
+ * Copyright 2015 Leonid Stryzhevskyi
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+
 public class SwipeToGridViewLayout extends ViewGroup{
 
   public static final int MODE_SWIPE = 0;
@@ -285,12 +295,16 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     viewPool.measureCards();
 
-    int widthSpec = MeasureSpec.makeMeasureSpec(fullWidth, MeasureSpec.EXACTLY);
-    int heightSpec = MeasureSpec.makeMeasureSpec(fullHeight, MeasureSpec.EXACTLY);
-
     for(int i = 0; i < getChildCount(); i++){
+
       View view = getChildAt(i);
+      LayoutParams params = view.getLayoutParams();
+
+      int widthSpec = MeasureSpec.makeMeasureSpec(params.width, MeasureSpec.EXACTLY);
+      int heightSpec = MeasureSpec.makeMeasureSpec(params.height, MeasureSpec.EXACTLY);
+
       view.measure(widthSpec, heightSpec);
+
     }
 
   }
@@ -300,7 +314,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     for(int i = 0; i < getChildCount(); i++){
       View view = getChildAt(i);
-      view.layout(0, 0, getWidth(), getHeight());
+      LayoutParams params = view.getLayoutParams();
+      view.layout(0, 0, params.width, params.height);
     }
 
     if(currMode == MODE_SWIPE) {
@@ -678,17 +693,9 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
   }
 
-  private void logTouchEvent(MotionEvent event){
-
-    Log.e("AAA", "event:" + event.toString());
-
-  }
-
   @Override
   public boolean onInterceptTouchEvent(MotionEvent event){
 
-    Log.e("AAA", "From Intercept");
-    logTouchEvent(event);
     gestureDetector.onTouchEvent(event);
 
     if(event.getPointerCount() >= 2){
@@ -737,8 +744,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
   @Override
   public boolean onTouchEvent(MotionEvent event){
-    Log.e("AAA", "From touch");
-    logTouchEvent(event);
+
     gestureDetector.onTouchEvent(event);
 
     switch (event.getAction()){
@@ -1051,15 +1057,12 @@ public class SwipeToGridViewLayout extends ViewGroup{
     private int index;
 
     private View view;
-    private PrimitiveLayout subView;
 
     public ViewRecord(int index, View view){
       this.index = index;
       this.view = view;
-      subView = new PrimitiveLayout(getContext());
-      subView.addView(view, new LayoutParams((int) swipeCardWidth, (int) swipeCardHeight));
-      addViewInLayout(subView, -1, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
-      subView.requestLayout();
+      LayoutParams params;
+      addViewInLayout(this.view, -1, new LayoutParams((int) swipeCardWidth, (int) swipeCardHeight));
     }
 
     public void setIndex(int index){
@@ -1075,7 +1078,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
     }
 
     public void scroll(float x, float y){
-      subView.scrollTo((int)x, (int)y);
+      view.setX(-x);
+      view.setY(-y);
     }
 
   }
@@ -1090,14 +1094,12 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     public ViewRecord requestView(int index){
 
-      Log.e("AAA", "requesting view... viewPoolSize = " + availableRecords.size() + "/" + records.size());
-
       if(availableRecords.size() > 0) {
 
         for (ViewRecord rec : availableRecords) {
           if (rec.getIndex() == index) {
             availableRecords.remove(rec);
-            rec.subView.setVisibility(View.VISIBLE);
+            rec.view.setVisibility(View.VISIBLE);
             return rec;
           }
         }
@@ -1105,7 +1107,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
         ViewRecord rec = availableRecords.removeFirst();
         rec.setIndex(index);
         updateRecordView(rec);
-        rec.subView.setVisibility(View.VISIBLE);
+        rec.view.setVisibility(View.VISIBLE);
         return rec;
 
       }else{
@@ -1116,7 +1118,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     public void recycleView(ViewRecord record){
       availableRecords.add(record);
-      record.subView.setVisibility(View.INVISIBLE);
+      record.view.setVisibility(View.INVISIBLE);
     }
 
     private ViewRecord createNewRecord(int index){
@@ -1137,7 +1139,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
         record.getView().setLayoutParams(new LayoutParams((int) swipeCardWidth, (int) swipeCardHeight));
         records.add(record);
         availableRecords.add(record);
-        record.subView.setVisibility(View.INVISIBLE);
+        record.view.setVisibility(View.INVISIBLE);
       }
     }
 

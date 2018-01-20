@@ -4,15 +4,13 @@ import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.lganzzzo.ui.widget.swipetogridview.SwipeToGridViewAdapter;
 import com.lganzzzo.ui.widget.swipetogridview.SwipeToGridViewLayout;
 
+import java.util.Random;
 
 public class MainActivity extends Activity {
 
@@ -25,17 +23,22 @@ public class MainActivity extends Activity {
     setContentView(R.layout.activity_main);
 
     swipeToGridViewLayout = (SwipeToGridViewLayout)findViewById(R.id.card_view);
-    swipeToGridViewLayout.setAdapter(new CardsAdapter(this));
+    swipeToGridViewLayout.setAdapter(new CardsAdapter(this, 100));
     swipeToGridViewLayout.precacheViews(50);
 
   }
 
   private static class CardsAdapter extends SwipeToGridViewAdapter {
 
-    private int[] images = {R.drawable.image_1, R.drawable.image_2, R.drawable.image_3};
+    private Random random = new Random(256);
+    private int[] colors;
 
-    public CardsAdapter(Context context) {
+    public CardsAdapter(Context context, int count) {
       super(context);
+      colors = new int[count];
+      for(int i = 0; i < count; i++){
+        colors[i] = 0x66000000 + random.nextInt(0xFFFFFF);
+      }
     }
 
     @Override
@@ -45,17 +48,15 @@ public class MainActivity extends Activity {
 
     @Override
     public void updateView(int index, View view) {
-      ImageView imageView = (ImageView)view.findViewById(R.id.imageView);
-      imageView.setImageResource(images[index % images.length]);
-
+      View frame = view.findViewById(R.id.frame_layout);
+      frame.setBackgroundColor(colors[index]);
       TextView textView = (TextView)view.findViewById(R.id.textView);
       textView.setText("#" + index);
-
     }
 
     @Override
     public int getCount() {
-      return 2 * 100;
+      return colors.length;
     }
 
   }

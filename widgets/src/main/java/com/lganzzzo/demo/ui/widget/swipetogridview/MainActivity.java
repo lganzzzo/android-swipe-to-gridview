@@ -30,7 +30,7 @@ public class MainActivity extends Activity {
       public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
         swipeToGridViewLayout.setColumnsNumber(1 + i);
         TextView columnNumber = findViewById(R.id.text_column_number);
-        columnNumber.setText("Columns: " + i);
+        columnNumber.setText("Columns: " + (i + 1));
       }
 
       @Override

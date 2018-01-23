@@ -16,7 +16,7 @@ import android.widget.OverScroller;
 
 import java.util.LinkedList;
 
-import test.lganzzzo.com.test1.R;
+import com.lganzzzo.demo.ui.widget.swipetogridview.R;
 
 /*
  * Copyright 2015 Leonid Stryzhevskyi
@@ -115,6 +115,9 @@ public class SwipeToGridViewLayout extends ViewGroup{
   private OverScroller scroller;
   private GestureDetector gestureDetector;
 
+  private OnItemClickListener onItemClickListener = null;
+  private OnSwipePageIndexChangedListener onSwipePageIndexChangedListener = null;
+
   private GestureDetector.OnGestureListener gestureListener = new GestureDetector.OnGestureListener() {
     @Override
     public boolean onDown(MotionEvent e) {
@@ -195,6 +198,23 @@ public class SwipeToGridViewLayout extends ViewGroup{
       a.recycle();
     }
 
+  }
+
+  public void setColumnsNumber(int columnsNumber){
+    this.GRID_VIEW_COLUMNS = columnsNumber;
+    requestLayout();
+  }
+
+  public int getColumnsNumber(){
+    return this.GRID_VIEW_COLUMNS;
+  }
+
+  public void setOnItemClickListener(OnItemClickListener listener) {
+    this.onItemClickListener = listener;
+  }
+
+  public void setOnSwipePageIndexChangedListener(OnSwipePageIndexChangedListener listener) {
+    this.onSwipePageIndexChangedListener = listener;
   }
 
   public void setAdapter(SwipeToGridViewAdapter adapter){
@@ -320,7 +340,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     if(currMode == MODE_SWIPE) {
       scrollingMode = MODE_SWIPE;
-      scrollToPage(getCurrentSwipePage());
+      int pageIndex = getCurrentSwipePageIndex();
+      scrollToPage(pageIndex);
     }
 
   }
@@ -523,6 +544,9 @@ public class SwipeToGridViewLayout extends ViewGroup{
     if(newIndex != selectedCardIndex){
       selectedCardIndex = newIndex;
       postInvalidate();
+      if(onItemClickListener != null){
+        onItemClickListener.onItemClick(selectedCardIndex);
+      }
     }
 
   }
@@ -600,6 +624,9 @@ public class SwipeToGridViewLayout extends ViewGroup{
       touchGridScrollY = gridScrollY;
     }else if(currMode == MODE_GRID){
       touchSwipeScrollX = swipeScrollX;
+      if(onSwipePageIndexChangedListener != null){
+        onSwipePageIndexChangedListener.onSwipePageIndexChanged(getCurrentSwipePageIndex());
+      }
     }
 
   }
@@ -645,7 +672,8 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     if(wasFling == false && currMode == MODE_SWIPE){
       scrollingMode = MODE_SWIPE;
-      scrollToPage(getCurrentSwipePage());
+      int pageIndex = getCurrentSwipePageIndex();
+      scrollToPage(pageIndex);
     }
 
     wasFling = false;
@@ -653,7 +681,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
     postInvalidate();
   }
 
-  private int getCurrentSwipePage(){
+  public int getCurrentSwipePageIndex(){
     float shift = getWidth() / 2 - swipeCardWidth / 2;
     return Math.round((- swipeScrollX + shift) / swipeFrameWidth);
   }
@@ -661,6 +689,9 @@ public class SwipeToGridViewLayout extends ViewGroup{
   private void scrollToPage(int pageIndex){
     float dx = getXPositionForSwipePage(pageIndex) - swipeScrollX;
     scroller.startScroll((int)swipeScrollX, 0, (int) dx, 0);
+    if(onSwipePageIndexChangedListener != null){
+      onSwipePageIndexChangedListener.onSwipePageIndexChanged(pageIndex);
+    }
   }
 
   private void onFling(float vx, float vy){
@@ -677,7 +708,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     if(currMode == MODE_SWIPE){
 
-      int index = getCurrentSwipePage();
+      int index = getCurrentSwipePageIndex();
       float needScrollX = getXPositionForSwipePage(index);
 
       float neededVx = swipeCardWidth / 5;
@@ -714,6 +745,9 @@ public class SwipeToGridViewLayout extends ViewGroup{
         if(newIndex != selectedCardIndex){
           selectedCardIndex = newIndex;
           postInvalidate();
+          if(onItemClickListener != null){
+            onItemClickListener.onItemClick(selectedCardIndex);
+          }
         }
 
         break;
@@ -771,8 +805,6 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     return false;
 
-
-
   }
 
   private void processOnePointMove(float x, float y){
@@ -810,8 +842,6 @@ public class SwipeToGridViewLayout extends ViewGroup{
   private boolean processZoomingTouch(MotionEvent event){
     return false;
   }
-
-
 
 
   //---------------------------------------------------------------------------
@@ -1045,6 +1075,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
         i++;
       }
 
+
     }
 
   }
@@ -1151,6 +1182,16 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
     }
 
+  }
+
+  // Listeners
+
+  public interface OnItemClickListener {
+    void onItemClick(int itemIndex);
+  }
+
+  public interface OnSwipePageIndexChangedListener {
+    void onSwipePageIndexChanged(int itemIndex);
   }
 
 }

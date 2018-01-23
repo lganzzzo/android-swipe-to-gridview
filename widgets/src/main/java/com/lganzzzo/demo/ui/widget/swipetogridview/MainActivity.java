@@ -1,10 +1,11 @@
-package test.lganzzzo.com.test1;
+package com.lganzzzo.demo.ui.widget.swipetogridview;
 
 import android.app.Activity;
 import android.content.Context;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
+import android.widget.SeekBar;
 import android.widget.TextView;
 
 import com.lganzzzo.ui.widget.swipetogridview.SwipeToGridViewAdapter;
@@ -22,9 +23,46 @@ public class MainActivity extends Activity {
 
     setContentView(R.layout.activity_main);
 
+    SeekBar seekBar = findViewById(R.id.seekBar);
+
+    seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+      @Override
+      public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+        swipeToGridViewLayout.setColumnsNumber(1 + i);
+        TextView columnNumber = findViewById(R.id.text_column_number);
+        columnNumber.setText("Columns: " + i);
+      }
+
+      @Override
+      public void onStartTrackingTouch(SeekBar seekBar) {
+
+      }
+
+      @Override
+      public void onStopTrackingTouch(SeekBar seekBar) {
+
+      }
+    });
+
     swipeToGridViewLayout = (SwipeToGridViewLayout)findViewById(R.id.card_view);
     swipeToGridViewLayout.setAdapter(new CardsAdapter(this, 100));
     swipeToGridViewLayout.precacheViews(50);
+
+    swipeToGridViewLayout.setOnItemClickListener(new SwipeToGridViewLayout.OnItemClickListener() {
+      @Override
+      public void onItemClick(int itemIndex) {
+        TextView selectedItem = findViewById(R.id.text_clicked_item);
+        selectedItem.setText("Clicked Item: " + itemIndex);
+      }
+    });
+
+    swipeToGridViewLayout.setOnSwipePageIndexChangedListener(new SwipeToGridViewLayout.OnSwipePageIndexChangedListener() {
+      @Override
+      public void onSwipePageIndexChanged(int itemIndex) {
+        TextView selectedItem = findViewById(R.id.text_selected_item);
+        selectedItem.setText("Selected Item: " + itemIndex);
+      }
+    });
 
   }
 

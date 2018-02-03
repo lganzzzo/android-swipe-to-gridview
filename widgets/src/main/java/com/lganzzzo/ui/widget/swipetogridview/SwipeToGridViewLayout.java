@@ -109,6 +109,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
 
   private boolean isTouched = false;
   private boolean wasFling = false;
+  private boolean wasMoved = false;
 
   private long lastTickTime = 0;
 
@@ -544,9 +545,6 @@ public class SwipeToGridViewLayout extends ViewGroup{
     if(newIndex != selectedCardIndex){
       selectedCardIndex = newIndex;
       postInvalidate();
-      if(onItemClickListener != null){
-        onItemClickListener.onItemClick(selectedCardIndex);
-      }
     }
 
   }
@@ -670,7 +668,7 @@ public class SwipeToGridViewLayout extends ViewGroup{
     initialTouchDistance = 0;
     isTouched = false;
 
-    if(wasFling == false && currMode == MODE_SWIPE){
+    if(!wasFling && currMode == MODE_SWIPE){
       scrollingMode = MODE_SWIPE;
       int pageIndex = getCurrentSwipePageIndex();
       scrollToPage(pageIndex);
@@ -745,9 +743,6 @@ public class SwipeToGridViewLayout extends ViewGroup{
         if(newIndex != selectedCardIndex){
           selectedCardIndex = newIndex;
           postInvalidate();
-          if(onItemClickListener != null){
-            onItemClickListener.onItemClick(selectedCardIndex);
-          }
         }
 
         break;
@@ -787,15 +782,20 @@ public class SwipeToGridViewLayout extends ViewGroup{
         if(isTouched){
           return true;
         }
+        wasMoved = false;
         onTouchBegin(event.getX(), event.getY());
         return true;
 
       case MotionEvent.ACTION_MOVE:
         onTouchContinue(event);
+        wasMoved = true;
         return true;
 
       case MotionEvent.ACTION_UP:
         onTouchEnd(event);
+        if(!wasMoved && onItemClickListener != null){
+          onItemClickListener.onItemClick(selectedCardIndex);
+        }
         return true;
 
       default:
